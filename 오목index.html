@@ -1,0 +1,82 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>연결 리스트 오목 게임</title>
+    <style>
+        body { background: #fdf6e3; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: sans-serif; }
+        .container { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); text-align: center; }
+        .board { display: grid; grid-template-columns: repeat(15, 35px); grid-template-rows: repeat(15, 35px); background: #deb887; padding: 10px; border: 3px solid #8b4513; margin: 20px auto; }
+        .cell { width: 35px; height: 35px; border: 0.5px solid #8b4513; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+        .stone { width: 30px; height: 30px; border-radius: 50%; }
+        .black { background: #000; box-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .white { background: #fff; box-shadow: 2px 2px 4px rgba(0,0,0,0.2); border: 1px solid #ccc; }
+        .status { font-size: 24px; font-weight: bold; margin-bottom: 15px; color: #333; }
+        button { padding: 10px 20px; cursor: pointer; border-radius: 5px; border: none; background: #8b4513; color: white; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="status" id="status">⚫ 흑돌 차례</div>
+        <div id="board" class="board"></div>
+        <button id="reset-btn">게임 초기화</button>
+    </div>
+    <script>
+        const SIZE = 15;
+        let turn = 'black';
+        let gameOver = false;
+        let nodes = Array.from({length: SIZE}, () => Array(SIZE).fill(null));
+
+        function init() {
+            const boardEl = document.getElementById('board');
+            document.getElementById('reset-btn').onclick = () => location.reload();
+            for(let r=0; r<SIZE; r++) {
+                for(let c=0; c<SIZE; c++) {
+                    const el = document.createElement('div');
+                    el.className = 'cell';
+                    el.onclick = () => play(r, c);
+                    boardEl.appendChild(el);
+                    nodes[r][c] = { r, c, color: null, el, next: {} };
+                }
+            }
+            const dirs = {N:[-1,0], S:[1,0], E:[0,1], W:[0,-1], NE:[-1,1], NW:[-1,-1], SE:[1,1], SW:[1,-1]};
+            for(let r=0; r<SIZE; r++) {
+                for(let c=0; c<SIZE; c++) {
+                    for(let d in dirs) {
+                        let nr = r + dirs[d][0], nc = c + dirs[d][1];
+                        if(nr>=0 && nr<SIZE && nc>=0 && nc<SIZE) nodes[r][c].next[d] = nodes[nr][nc];
+                    }
+                }
+            }
+        }
+
+        function play(r, c) {
+            if(nodes[r][c].color || gameOver) return;
+            const node = nodes[r][c];
+            node.color = turn;
+            node.el.innerHTML = `<div class="stone ${turn}"></div>`;
+            if(checkWin(node)) {
+                document.getElementById('status').innerText = `🎊 ${turn === 'black' ? '흑돌' : '백돌'} 승리!`;
+                gameOver = true;
+                return;
+            }
+            turn = (turn === 'black') ? 'white' : 'black';
+            document.getElementById('status').innerText = (turn === 'black' ? "⚫ 흑돌 차례" : "⚪ 백돌 차례");
+        }
+
+        function checkWin(node) {
+            const pairs = [['N','S'], ['E','W'], ['NE','SW'], ['NW','SE']];
+            return pairs.some(p => {
+                let cnt = 1;
+                pair_loop: p.forEach(d => {
+                    let curr = node.next[d];
+                    while(curr && curr.color === node.color) { cnt++; curr = curr.next[d]; }
+                });
+                return cnt >= 5;
+            });
+        }
+        init();
+    </script>
+</body>
+</html>
